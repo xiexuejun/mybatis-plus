@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.baomidou.mybatisplus.generator.InjectionConfig;
 import com.baomidou.mybatisplus.generator.config.ConstVal;
 import com.baomidou.mybatisplus.generator.config.DataSourceConfig;
 import com.baomidou.mybatisplus.generator.config.GlobalConfig;
@@ -91,11 +92,14 @@ public class ConfigBuilder {
      * 策略配置
      */
     private StrategyConfig strategyConfig;
-
     /**
      * 全局配置信息
      */
     private GlobalConfig globalConfig;
+    /**
+     * 注入配置信息
+     */
+    private InjectionConfig injectionConfig;
 
     /**
      * <p>
@@ -199,6 +203,11 @@ public class ConfigBuilder {
      */
     public List<TableInfo> getTableInfoList() {
         return tableInfoList;
+    }
+
+    public ConfigBuilder setTableInfoList(List<TableInfo> tableInfoList) {
+        this.tableInfoList = tableInfoList;
+        return this;
     }
 
     /**
@@ -311,12 +320,14 @@ public class ConfigBuilder {
      * 处理表对应的类名称
      * </P>
      *
-     * @param tableList   表名称
-     * @param strategy    命名策略
-     * @param tablePrefix
+     * @param tableList 表名称
+     * @param strategy  命名策略
+     * @param config    策略配置项
      * @return 补充完整信息后的表
      */
-    private List<TableInfo> processTable(List<TableInfo> tableList, NamingStrategy strategy, String[] tablePrefix) {
+    private List<TableInfo> processTable(List<TableInfo> tableList, NamingStrategy strategy, StrategyConfig config) {
+        String[] tablePrefix = config.getTablePrefix();
+        String[] fieldPrefix = config.getFieldPrefix();
         for (TableInfo tableInfo : tableList) {
             tableInfo.setEntityName(strategyConfig, NamingStrategy.capitalFirst(processName(tableInfo.getName(), strategy, tablePrefix)));
             if (StringUtils.isNotEmpty(globalConfig.getMapperName())) {
@@ -344,8 +355,56 @@ public class ConfigBuilder {
             } else {
                 tableInfo.setControllerName(tableInfo.getEntityName() + ConstVal.CONTROLLER);
             }
+            //强制开启字段注解
+            checkTableIdTableFieldAnnotation(config, tableInfo, fieldPrefix);
         }
         return tableList;
+    }
+
+    /**
+     * <p>
+     * 检查是否有
+     * {@link com.baomidou.mybatisplus.annotations.TableId}
+     * {@link com.baomidou.mybatisplus.annotations.TableField}
+     * 注解
+     * </p>
+     *
+     * @param config
+     * @param tableInfo
+     * @param fieldPrefix
+     */
+    private void checkTableIdTableFieldAnnotation(StrategyConfig config, TableInfo tableInfo, String[] fieldPrefix) {
+        boolean importTableFieldAnnotaion = false;
+        boolean importTableIdAnnotaion = false;
+        if (config.isEntityTableFieldAnnotationEnable()) {
+            for (TableField tf : tableInfo.getFields()) {
+                tf.setConvert(true);
+                importTableFieldAnnotaion = true;
+                importTableIdAnnotaion = true;
+            }
+        } else if (fieldPrefix != null && fieldPrefix.length != 0) {
+            for (TableField tf : tableInfo.getFields()) {
+                if (NamingStrategy.isPrefixContained(tf.getName(), fieldPrefix)) {
+                    if (tf.isKeyFlag()) {
+                        importTableIdAnnotaion = true;
+                    }
+                    tf.setConvert(true);
+                    importTableFieldAnnotaion = true;
+                }
+            }
+        }
+        if (importTableFieldAnnotaion) {
+            tableInfo.getImportPackages().add(com.baomidou.mybatisplus.annotations.TableField.class.getCanonicalName());
+        }
+        if (importTableIdAnnotaion) {
+            tableInfo.getImportPackages().add(com.baomidou.mybatisplus.annotations.TableId.class.getCanonicalName());
+        }
+        if (globalConfig.getIdType() != null) {
+            if (!importTableIdAnnotaion) {
+                tableInfo.getImportPackages().add(com.baomidou.mybatisplus.annotations.TableId.class.getCanonicalName());
+            }
+            tableInfo.getImportPackages().add(com.baomidou.mybatisplus.enums.IdType.class.getCanonicalName());
+        }
     }
 
     /**
@@ -368,8 +427,6 @@ public class ConfigBuilder {
 
         //不存在的表名
         Set<String> notExistTables = new HashSet<>();
-
-        NamingStrategy strategy = config.getNaming();
         PreparedStatement preparedStatement = null;
         try {
             String tableCommentsSql = querySQL.getTableCommentsSql();
@@ -423,7 +480,7 @@ public class ConfigBuilder {
                             }
                         }
                     }
-                    tableList.add(this.convertTableFields(tableInfo, strategy));
+                    tableList.add(tableInfo);
                 } else {
                     System.err.println("当前数据库为空！！！");
                 }
@@ -445,6 +502,12 @@ public class ConfigBuilder {
             if (!isInclude && !isExclude) {
                 includeTableList = tableList;
             }
+            /**
+             * 性能优化，只处理需执行表字段 github issues/219
+             */
+            for (TableInfo ti : includeTableList) {
+                this.convertTableFields(ti, config.getColumnNaming());
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
@@ -460,7 +523,7 @@ public class ConfigBuilder {
                 e.printStackTrace();
             }
         }
-        return processTable(includeTableList, strategy, config.getTablePrefix());
+        return processTable(includeTableList, config.getNaming(), config);
     }
 
 
@@ -603,27 +666,27 @@ public class ConfigBuilder {
 
     /**
      * <p>
-     * 处理字段名称
+     * 处理表/字段名称
      * </p>
      *
      * @param name
      * @param strategy
-     * @param tablePrefix
+     * @param prefix
      * @return 根据策略返回处理后的名称
      */
-    private String processName(String name, NamingStrategy strategy, String[] tablePrefix) {
+    private String processName(String name, NamingStrategy strategy, String[] prefix) {
         boolean removePrefix = false;
-        if (tablePrefix != null && tablePrefix.length >= 1) {
+        if (prefix != null && prefix.length >= 1) {
             removePrefix = true;
         }
         String propertyName;
         if (removePrefix) {
             if (strategy == NamingStrategy.underline_to_camel) {
                 // 删除前缀、下划线转驼峰
-                propertyName = NamingStrategy.removePrefixAndCamel(name, tablePrefix);
+                propertyName = NamingStrategy.removePrefixAndCamel(name, prefix);
             } else {
                 // 删除前缀
-                propertyName = NamingStrategy.removePrefix(name, tablePrefix);
+                propertyName = NamingStrategy.removePrefix(name, prefix);
             }
         } else if (strategy == NamingStrategy.underline_to_camel) {
             // 下划线转驼峰
@@ -636,7 +699,9 @@ public class ConfigBuilder {
     }
 
     /**
+     * <p>
      * 获取当前的SQL类型
+     * </p>
      *
      * @return DB类型
      */
@@ -667,4 +732,12 @@ public class ConfigBuilder {
         return this;
     }
 
+    public InjectionConfig getInjectionConfig() {
+        return injectionConfig;
+    }
+
+    public ConfigBuilder setInjectionConfig(InjectionConfig injectionConfig) {
+        this.injectionConfig = injectionConfig;
+        return this;
+    }
 }

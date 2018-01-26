@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 import com.baomidou.mybatisplus.generator.AutoGenerator;
 import com.baomidou.mybatisplus.generator.InjectionConfig;
@@ -17,6 +18,7 @@ import com.baomidou.mybatisplus.generator.config.po.TableInfo;
 import com.baomidou.mybatisplus.generator.config.rules.DbColumnType;
 import com.baomidou.mybatisplus.generator.config.rules.DbType;
 import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
+import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
 
 /**
  * <p>
@@ -26,9 +28,10 @@ import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
  * @author nieqiurong
  * @Date 2016/12/25
  */
-public class PostgreSQLGenerator {
+public class PostgreSQLGenerator extends GeneratorTest {
 
     public static void main(String[] args) {
+        int result = scanner();
         AutoGenerator mpg = new AutoGenerator();
 
         // 全局配置
@@ -74,6 +77,7 @@ public class PostgreSQLGenerator {
         // strategy.setDbColumnUnderline(true);//全局下划线命名
         strategy.setTablePrefix(new String[]{"bmd_", "mp_"});// 此处可以修改为您的表前缀
         strategy.setNaming(NamingStrategy.underline_to_camel);// 表名生成策略
+        strategy.setColumnNaming(NamingStrategy.underline_to_camel);// 允许字段策略独立设置，默认为 naming 策略
         // strategy.setInclude(new String[] { "user" }); // 需要生成的表
         // strategy.setExclude(new String[]{"test"}); // 排除生成的表
         // 自定义实体父类
@@ -113,7 +117,7 @@ public class PostgreSQLGenerator {
             }
         };
         List<FileOutConfig> focList = new ArrayList<>();
-        focList.add(new FileOutConfig("/templates/entity.java.vm") {
+        focList.add(new FileOutConfig("/templates/entity.java" + ((1 == result) ? ".ftl" : ".vm")) {
             @Override
             public String outputFile(TableInfo tableInfo) {
                 // 自定义输入文件名称
@@ -133,7 +137,11 @@ public class PostgreSQLGenerator {
         // tc.setService("...");
         // tc.setServiceImpl("...");
         // mpg.setTemplate(tc);
+
         // 执行生成
+        if (1 == result) {
+            mpg.setTemplateEngine(new FreemarkerTemplateEngine());
+        }
         mpg.execute();
         // 打印注入设置
         System.err.println(mpg.getCfg().getMap().get("abc"));

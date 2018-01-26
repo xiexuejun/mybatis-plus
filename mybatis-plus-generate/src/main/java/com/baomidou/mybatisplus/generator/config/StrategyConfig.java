@@ -15,11 +15,11 @@
  */
 package com.baomidou.mybatisplus.generator.config;
 
+import java.util.List;
+
 import com.baomidou.mybatisplus.generator.config.po.TableFill;
 import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
 import com.baomidou.mybatisplus.toolkit.StringUtils;
-
-import java.util.List;
 
 /**
  * <p>
@@ -45,6 +45,11 @@ public class StrategyConfig {
      * 数据库表映射到实体的命名策略
      */
     private NamingStrategy naming = NamingStrategy.nochange;
+    /**
+     * 数据库表字段映射到实体的命名策略<br/>
+     * 未指定按照 naming 执行
+     */
+    private NamingStrategy columnNaming = null;
 
     /**
      * 表前缀
@@ -136,6 +141,10 @@ public class StrategyConfig {
     private boolean controllerMappingHyphenStyle = false;
 
     /**
+     * 是否生成实体时，生成字段注解
+     */
+    private boolean entityTableFieldAnnotationEnable = false;
+    /**
      * 乐观锁属性名称
      */
     private String versionFieldName;
@@ -204,6 +213,19 @@ public class StrategyConfig {
 
     public StrategyConfig setNaming(NamingStrategy naming) {
         this.naming = naming;
+        return this;
+    }
+
+    public NamingStrategy getColumnNaming() {
+        if (null == columnNaming) {
+            // 未指定以 naming 策略为准
+            return naming;
+        }
+        return columnNaming;
+    }
+
+    public StrategyConfig setColumnNaming(NamingStrategy columnNaming) {
+        this.columnNaming = columnNaming;
         return this;
     }
 
@@ -398,5 +420,19 @@ public class StrategyConfig {
 
     public void setFieldPrefix(String[] fieldPrefix) {
         this.fieldPrefix = fieldPrefix;
+    }
+
+    public StrategyConfig fieldPrefix(String... fieldPrefixs) {
+        setFieldPrefix(fieldPrefixs);
+        return this;
+    }
+
+    public StrategyConfig entityTableFieldAnnotationEnable(boolean isEnableAnnotation) {
+        this.entityTableFieldAnnotationEnable = isEnableAnnotation;
+        return this;
+    }
+
+    public boolean isEntityTableFieldAnnotationEnable() {
+        return entityTableFieldAnnotationEnable;
     }
 }

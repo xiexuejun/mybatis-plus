@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2014, hubin (jobob@qq.com).
+ * Copyright (c) 2011-2020, hubin (jobob@qq.com).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -22,6 +22,7 @@ import java.lang.annotation.Target;
 
 import com.baomidou.mybatisplus.enums.FieldFill;
 import com.baomidou.mybatisplus.enums.FieldStrategy;
+import com.baomidou.mybatisplus.mapper.SqlCondition;
 
 /**
  * <p>
@@ -48,7 +49,7 @@ public @interface TableField {
      * </p>
      * <p>
      * 支持：@TableField(el = "role, jdbcType=BIGINT)<br>
-     * 支持：@TableField(el = "role, typeHandler=com.baomidou.xx.typehandler.PhoneTypeHandler")
+     * 支持：@TableField(el = "role, typeHandler=com.baomidou.springcloud.typehandler.PhoneTypeHandler")
      * </p>
      */
     String el() default "";
@@ -62,6 +63,31 @@ public @interface TableField {
      * </p>
      */
     boolean exist() default true;
+
+    /**
+     * <p>
+     * 字段 where 实体查询比较条件
+     * </p>
+     * <p>
+     * 默认 `=` 等值
+     * </p>
+     */
+    String condition() default SqlCondition.EQUAL;
+
+    /**
+     * <p>
+     * 字段 update set 部分注入, 该注解优于 el 注解使用
+     * </p>
+     * <p>
+     * 例如：@TableField(.. , update="%s+1") 其中 %s 会填充为字段
+     * 输出 SQL 为：update 表 set 字段=字段+1 where ...
+     * </p>
+     * <p>
+     * 例如：@TableField(.. , update="now()") 使用数据库时间
+     * 输出 SQL 为：update 表 set 字段=now() where ...
+     * </p>
+     */
+    String update() default "";
 
     /**
      * <p>

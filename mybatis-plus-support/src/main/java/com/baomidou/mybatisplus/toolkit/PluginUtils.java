@@ -15,12 +15,19 @@
  */
 package com.baomidou.mybatisplus.toolkit;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
+
+import com.baomidou.mybatisplus.annotations.SqlParser;
+import com.baomidou.mybatisplus.entity.SqlParserInfo;
+import com.baomidou.mybatisplus.exceptions.MybatisPlusException;
 
 /**
  * <p>
@@ -35,8 +42,45 @@ public final class PluginUtils {
     public static final String DELEGATE_BOUNDSQL_SQL = "delegate.boundSql.sql";
     public static final String DELEGATE_MAPPEDSTATEMENT = "delegate.mappedStatement";
 
+    /**
+     * SQL 解析缓存
+     */
+    private static final Map<String, SqlParserInfo> sqlParserInfoCache = new ConcurrentHashMap<>();
+
+
     private PluginUtils() {
         // to do nothing
+    }
+
+    /**
+     * <p>
+     * 初始化缓存 SqlParser 注解信息
+     * </p>
+     *
+     * @param mapperClass Mapper Class
+     */
+    public synchronized static void initSqlParserInfoCache(Class<?> mapperClass) {
+        Method[] methods = mapperClass.getDeclaredMethods();
+        for (Method method : methods) {
+            SqlParser sqlParser = method.getAnnotation(SqlParser.class);
+            if (null != sqlParser) {
+                StringBuilder sid = new StringBuilder();
+                sid.append(mapperClass.getName()).append(".").append(method.getName());
+                sqlParserInfoCache.put(sid.toString(), new SqlParserInfo(sqlParser));
+            }
+        }
+    }
+
+    /**
+     * <p>
+     * 获取 SqlParser 注解信息
+     * </p>
+     *
+     * @param metaObject 元数据对象
+     * @return
+     */
+    public static SqlParserInfo getSqlParserInfo(MetaObject metaObject) {
+        return sqlParserInfoCache.get(getMappedStatement(metaObject).getId());
     }
 
     /**

@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.apache.ibatis.reflection.MetaObject;
 
+import com.baomidou.mybatisplus.entity.SqlParserInfo;
 import com.baomidou.mybatisplus.plugins.parser.ISqlParser;
 import com.baomidou.mybatisplus.plugins.parser.ISqlParserFilter;
 import com.baomidou.mybatisplus.plugins.parser.SqlInfo;
@@ -48,7 +49,13 @@ public abstract class SqlParserHandler {
             }
             // SQL 解析
             if (CollectionUtils.isNotEmpty(this.sqlParserList)) {
-                int flag = 0;// 标记是否修改过 SQL
+                // @SqlParser(filter = true) 跳过该方法解析
+                SqlParserInfo sqlParserInfo = PluginUtils.getSqlParserInfo(metaObject);
+                if (null != sqlParserInfo && sqlParserInfo.getFilter()) {
+                    return;
+                }
+                // 标记是否修改过 SQL
+                int flag = 0;
                 String originalSql = (String) metaObject.getValue(PluginUtils.DELEGATE_BOUNDSQL_SQL);
                 for (ISqlParser sqlParser : this.sqlParserList) {
                     SqlInfo sqlInfo = sqlParser.optimizeSql(metaObject, originalSql);

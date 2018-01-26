@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2014, hubin (jobob@qq.com).
+ * Copyright (c) 2011-2020, hubin (jobob@qq.com).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -21,6 +21,7 @@ import com.baomidou.mybatisplus.annotations.TableField;
 import com.baomidou.mybatisplus.annotations.TableLogic;
 import com.baomidou.mybatisplus.enums.FieldFill;
 import com.baomidou.mybatisplus.enums.FieldStrategy;
+import com.baomidou.mybatisplus.mapper.SqlCondition;
 import com.baomidou.mybatisplus.toolkit.SqlReservedWords;
 import com.baomidou.mybatisplus.toolkit.StringUtils;
 
@@ -77,6 +78,16 @@ public class TableFieldInfo {
     private String logicNotDeleteValue;
 
     /**
+     * 字段 update set 部分注入
+     */
+    private String update;
+
+    /**
+     * where 字段比较条件
+     */
+    private String condition = SqlCondition.EQUAL;
+
+    /**
      * 字段填充策略
      */
     private FieldFill fieldFill = FieldFill.DEFAULT;
@@ -117,6 +128,8 @@ public class TableFieldInfo {
             this.fieldStrategy = globalConfig.getFieldStrategy();
         }
         tableInfo.setLogicDelete(this.initLogicDelete(globalConfig, field));
+        this.update = tableField.update();
+        this.condition = tableField.condition();
         /*
          * 保存当前字段的填充策略
 		 */
@@ -243,6 +256,22 @@ public class TableFieldInfo {
 
     public void setLogicNotDeleteValue(String logicNotDeleteValue) {
         this.logicNotDeleteValue = logicNotDeleteValue;
+    }
+
+    public String getUpdate() {
+        return update;
+    }
+
+    public void setUpdate(String update) {
+        this.update = update;
+    }
+
+    public String getCondition() {
+        return condition;
+    }
+
+    public void setCondition(String condition) {
+        this.condition = condition;
     }
 
     public FieldFill getFieldFill() {

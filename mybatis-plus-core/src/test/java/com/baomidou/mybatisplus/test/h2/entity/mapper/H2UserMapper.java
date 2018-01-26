@@ -9,7 +9,6 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import com.baomidou.mybatisplus.plugins.Page;
-import com.baomidou.mybatisplus.test.h2.entity.SuperMapper;
 import com.baomidou.mybatisplus.test.h2.entity.persistent.H2Addr;
 import com.baomidou.mybatisplus.test.h2.entity.persistent.H2User;
 
@@ -67,7 +66,7 @@ public interface H2UserMapper extends SuperMapper<H2User> {
             " where age>#{ageFrom} and age<#{ageTo} ")
     List<H2User> selectUserWithParamInSelectStatememt4Page(Map<String, Object> param, Page<H2User> page);
 
-    @Select(" select test_id as id, power(${ageFrom},2), '${nameParam}' as name " +
+    @Select(" select test_id as id, power(${ageFrom},2) as age, '${nameParam}' as name " +
             " from h2user " +
             " where age>#{ageFrom} and age<#{ageTo} ")
     List<H2User> selectUserWithDollarParamInSelectStatememt4Page(Map<String, Object> param, Page<H2User> page);

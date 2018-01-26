@@ -1,7 +1,66 @@
 ﻿# CHANGELOG
 
+## [v2.1.9-SNAPSHOT] 2018.01.16
+- 调整 Gradle 依赖模式
+- IdType 可选 ID_WORKER_STR `字符串类型` IdWorker.getIdStr() 字符串类型
+- TableField 注解新增属性 `update` 预处理 set 字段自定义注入 fixed gitee IHART
+```
+ 例如：@TableField(.. , update="%s+1") 其中 %s 会填充为字段
+ 输出 SQL 为：update 表 set 字段=字段+1 where ...
+```
+```
+ 例如：@TableField(.. , update="now()") 使用数据库时间
+ 输出 SQL 为：update 表 set 字段=now() where ...
+```
+- TableField 注解新增属性 `condition` 预处理 WHERE 实体条件自定义运算规则
+```
+@TableField(condition = SqlCondition.LIKE)
+private String name;
+输出 SQL 为：select 表 where name LIKE CONCAT('%',值,'%')
+```
+- 添加 spring-boot-starter 模块内置 `jdbc mp 包不需要单独引入` 更舒服的使用 boot
+- 添加对 SQL Server 视图生成的支持
+- 允许字段策略独立设置，默认为 naming 策略
+```
+strategy.setNaming(NamingStrategy.underline_to_camel);// 表名生成策略
+strategy.setColumnNaming(NamingStrategy.underline_to_camel);// 允许字段策略独立设置，默认为 naming 策略
+```
+- 代码生成器抽象 AbstractTemplateEngine 模板引擎抽象类，可自定义模板引擎，新增内置 freemarker 可选
+```
+// 选择 freemarker 引擎
+mpg.setTemplateEngine(new FreemarkerTemplateEngine());
+```
+- 相关 SQL 解析如多租户可通过 `@SqlParser(filter=true)` 排除 SQL 解析
+```$xslt
+# 开启 SQL 解析缓存注解生效
+mybatis-plus:
+    global-config:
+        sql-parser-cache: true
+```
+- 解决xml加载顺序问题，可随意引入其他 xml sql 片段
+- 修复 author 带123的bug
+- fix #IGQGE:Wrapper为空,但是page.getCondition()不为空的情况,Condition无法传递问题
+- fix #IH6ED:Pagination dubbo 排序等属性序列化不支持
+- 判断Wrapper是否为空，使用==，避免被equals方法重载的影响
+- 避免注入自定义基类
+- 剥离 sql 单独提出至 SqlUtils
+- 统一缩进编码风格
+- 优化生成代码执行性能 github issues/219
+- 优化 sql 解析过程
+- fixed gitee issues/IHCQB
+- springboot-configuration-processor 修改 compileOnly为optional
+- 其他
 
-## [v2.1.8-SNAPSHOT] 2017.12.28   
+
+## [v2.1.8] 2018.01.02 代号：囍
+- 修复代码生成器>字段前缀导致的bug
+- 使用类全名替代手写的全名
+- build修改
+- 脚本警告,忽略目录
+- 其他优化
+
+
+## [v2.1.8-SNAPSHOT] 2017.12.28 代号：翻车鱼（秋秋赐名）
 - 返回Map自动下划线转驼峰
 - kotlin entity 静态常量支持
 - 优化 pagination 构造模式
@@ -29,19 +88,8 @@
 - bugfix for logic delete sql injector
 - 添加多个排序字段支持
 - fixed github #185:2.0.2版本 自增主键 批量插入问题 pr
-- 其他优化
+- 其他优化`
 
-
-## [v2.1.6] 2017.11.22 代号：小秋秋之吻
-- 模块拆分为 support core generate 代码生成分离可选择依赖
-- 解决 gitee issue IFX30 拆分 mybatis-plus-support 包支持
-- 解决 gitee issue IGAPX 通用枚举 bigdecimal 类型映射
-- druid补充,填充字段修改
-- 修复 kotlin 代码生成部分逻辑 Bug
-- 合并 gitee pr 40 updateAllColumn****等方法排除fill = FieldFill.INSERT注释的字段 感谢 Elsif 
-- 构造模式设置 kotlin 修改
-- Sql 工具类反射实例优化
-- 其他优化
 
 ## [v2.1.6] 2017.11.22 代号：小秋秋之吻
 - 模块拆分为 support core generate 代码生成分离可选择依赖
